@@ -1,0 +1,18 @@
+#####blast
+#用makeblastdb建立blast数据库
+makeblastdb -in ref.nbs.plant.fa -dbtype prot -out blastdb
+#用blastp进行序列搜索，得到每个序列的相似序列
+blastp -num_threads 20 -db blastdb -query Arabidopsis_thaliana.TAIR10.pep.all.fa -outfmt 7 -seg yes > blastp.out &
+#筛选identity大于75%的序列
+cat blastp.out |awk '$3>75' |cut -f1 |sort -u > blastp_result_id.list
+
+#####hmmseach
+#目标基因家族搜索
+hmmsearch --cut_tc --domtblout hmm.out hmm protein.fasta
+#过滤筛选得到E-value小于1*10-20
+grep -v "#" hmm.out|awk '($7 + 0) < 1E-06' | cut -f1 -d " "|sort -u >hmm.ids
+
+
+#####取上述两者结果的并集进行CDD过滤
+./CDD.pl  < ~/data/Script/CDD.pl > CDD.out
+#从CDD.out文件中选择保守结构域
